@@ -7,7 +7,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ## If BUILDKITE_BUILD_ID is not set, we are running in a local environment
 ## local environment is used for testing purposes. We need to source the functions.bash file in the test scripts
 ## If we are running in a Buildkite environment, we need to source the functions.bash file  
-if [ --n "${BUILDKITE_BUILD_ID:-}" ]; then
+BUILD_ID=${BUILDKITE_BUILD_ID:-""}
+if [ $BUILD_ID == "" ]; then
   # shellcheck source=lib/functions.bash
   # shellcheck disable=SC1091
   source "$DIR/../lib/functions.bash"  

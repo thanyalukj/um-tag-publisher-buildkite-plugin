@@ -31,8 +31,6 @@ setup() {
     export BUILDKITE_REPO="git@github.com:fanduel/um_repo_name.git"
     export BUILDKITE_BUILD_URL="https://buildkite.com/fanduel/um-android-contract/builds/123"
 
-    run bash -c "echo 'tagging with tag name'"
-
     stub buildkite-agent \
         "meta-data get 'skip-publish' --default 'true' : echo 'true'"
 
@@ -44,8 +42,6 @@ setup() {
 }
 
 @test "GIVEN skip-publish is false THEN publish the tag" {
-    bats_require_minimum_version 1.5.0
-
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM="android"
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME="android-contract"
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH="android/contract/build.gradle"
