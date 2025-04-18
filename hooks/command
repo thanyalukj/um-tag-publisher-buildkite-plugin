@@ -2,21 +2,92 @@
 
 set -euo pipefail
 
-DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=lib/functions.bash
 # shellcheck disable=SC1091
 source "$DIR/../lib/functions.bash"
 
-# PLATFORM = ios
-# TAG_NAME = FILE_PATH
-# FILE_PATH = GeolocationSdk.podspec
+####################################
+# Publish tag version
+####################################
+function publish_tag() {
+  local TAG_VERSION=$(get_platform_version_strings $PLATFORM $FILE_PATH)
+  local TAG="$TAG_NAME/$TAG_VERSION"
+  echo "-----------------------------"
+  echo "Publishing tag...."
+  echo "TAG_VERSION: $TAG_VERSION"
+  echo "TAG: $TAG"
+
+  message="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG: Build $BUILDKITE_BUILD_NUMBER for $BUILDKITE_BRANCH"
+  username="$BUILDKITE_BUILD_CREATOR"
+  email="$BUILDKITE_BUILD_CREATOR_EMAIL"
+
+  # transform git@github.com:fanduel/{repo_name}.git to github.com/fanduel/{repo_name}
+  repo_url=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@//' -e 's/\.git$//' -e 's/:/\//')
+  echo "GITHUB repo git - ${BUILDKITE_REPO}"
+  echo "GITHUB repo url - ${repo_url}"
+
+  echo "--- Setting username - ${username}"
+  git config user.name "$username"
+  echo "--- Setting email - ${email}"
+  git config user.email "$email"
+
+  # Fetch all tags before we check them
+  git fetch --tags
+
+  echo "--- Tagging with ${TAG}"
+  git tag "${TAG}" -m "${message}"
+
+  if ! git push origin "$TAG"; then
+    echo "--- Tag already exists"
+    buildkite-agent annotate "Failed to push tag \`$TAG\` as [it already exists](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)." --style 'error' --context "$TAG_NAME-tag-push"
+    exit 1
+  else
+    echo "--- Tags pushed"
+    buildkite-agent meta-data set 'publish-tag' $TAG
+    buildkite-agent annotate "Successfully tagged \`$TAG\` - [geolocation-sdk/releases/tag/$TAG](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)" --style 'success' --context "$TAG_NAME-tag-push"
+  fi
+
+  # if [[ "$PLATFORM" == "ios" ]]; then
+  #   echo "--- Publishing podspec"
+  #   bundle install --quiet
+  #   bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
+  #   bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
+  # fi
+}
+
+## setup
 PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
 FILE_PATH="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH"
 
+echo "Plugin Inputs:"
+echo "PLATFORM: $PLATFORM"
+echo "TAG_NAME: $TAG_NAME"
+echo "FILE_PATH: $FILE_PATH"
+
+echo "-----------------------------"
+
+echo "Environment Variables:"
+echo "BUILDKITE_BRANCH: $BUILDKITE_BRANCH"
+echo "BUILDKITE_BUILD_CREATOR: $BUILDKITE_BUILD_CREATOR"
+echo "BUILDKITE_BUILD_CREATOR_EMAIL: $BUILDKITE_BUILD_CREATOR_EMAIL"
+echo "BUILDKITE_ORGANIZATION_SLUG: $BUILDKITE_ORGANIZATION_SLUG"
+echo "BUILDKITE_PIPELINE_SLUG: $BUILDKITE_PIPELINE_SLUG"
+echo "BUILDKITE_BUILD_NUMBER: $BUILDKITE_BUILD_NUMBER"
+echo "BUILDKITE_REPO: $BUILDKITE_REPO"
+echo "BUILDKITE_BUILD_URL: $BUILDKITE_BUILD_URL"
+echo "BUILDKITE_BUILD_ID: $BUILDKITE_BUILD_ID"
+
+echo "-----------------------------"
+
 BRANCH=${BUILDKITE_BRANCH:-""}
 SKIP=$(buildkite-agent meta-data get 'skip-publish' --default 'true')
+
+echo "Computed Variables:"
+echo "BRANCH: $BRANCH"
+echo "SKIP_PUBLISH: $SKIP"
 
 if [[ "$SKIP" == "true" ]]; then
   echo "--- Skipping publish as skip-publish was set to true"
@@ -33,42 +104,5 @@ if [[ $BRANCH == "" ]]; then
   exit 1
 fi
 
-TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
-TAG="$TAG_NAME/$TAG_VERSION"
-
-message="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG: Build $BUILDKITE_BUILD_NUMBER for $BUILDKITE_BRANCH"
-username="$BUILDKITE_BUILD_CREATOR"
-email="$BUILDKITE_BUILD_CREATOR_EMAIL"
-
-# transform git@github.com:fanduel/{repo_name}.git to github.com/fanduel/{repo_name}
-repo_url=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@//' -e 's/\.git$//' -e 's/:/\//')
-echo "GITHUB repo git - ${BUILDKITE_REPO}"
-echo "GITHUB repo url - ${repo_url}"
-
-echo "--- Setting username - ${username}"
-git config user.name "$username"
-echo "--- Setting email - ${email}"
-git config user.email "$email"
-
-# Fetch all tags before we check them
-git fetch --tags
-
-# echo "--- Tagging with ${TAG}"
-# git tag "${TAG}" -m "${message}"
-
-# if ! git push origin "$TAG"; then 
-#   echo "--- Tag already exists"
-#   buildkite-agent annotate "Failed to push tag \`$TAG\` as [it already exists](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)." --style 'error' --context "$TAG_NAME-tag-push"
-#   exit 1
-# else
-#   echo "--- Tags pushed"
-#   buildkite-agent meta-data set 'publish-tag' $TAG
-#   buildkite-agent annotate "Successfully tagged \`$TAG\` - [geolocation-sdk/releases/tag/$TAG](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)" --style 'success' --context "$TAG_NAME-tag-push"
-# fi
-
-# if [[ "$PLATFORM" == "ios" ]]; then
-#   echo "--- Publishing podspec"
-#   bundle install --quiet
-#   bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
-#   bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
-# fi
+## Publish the tag
+publish_tag

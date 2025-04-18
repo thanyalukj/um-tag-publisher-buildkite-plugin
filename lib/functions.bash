@@ -5,10 +5,7 @@ set -euo pipefail
 function get_platform_version_strings() {
   local platform=$1
   local file_path=$2
-  echo "Usage: $0 <platform> <file_path>"
-  echo "platform: android, ios, react"
-  echo "file_path: path to the file containing version information"
-  
+
   case "$platform" in
     android)
       if [[ -f "${file_path}" ]]; then
@@ -34,5 +31,4 @@ function get_platform_version_strings() {
       fi
       ;;
   esac
-  exit 1
 }
