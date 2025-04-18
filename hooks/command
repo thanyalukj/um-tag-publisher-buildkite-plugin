@@ -19,21 +19,12 @@ PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
 FILE_PATH="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH"
 
-echo "PLATFORM: $PLATFORM"
-echo "TAG_NAME: $TAG_NAME"
-echo "FILE_PATH: $FILE_PATH"
-
 BRANCH=${BUILDKITE_BRANCH:-""}
 SKIP=$(buildkite-agent meta-data get 'skip-publish' --default 'true')
 
-echo "BRANCH: $BRANCH"
-echo "SKIP_PUBLISH: $SKIP"
-echo "-----------------------------"
-
-if [[ "$SKIP" == "true" ]]; then
-  echo "--- Skipping publish as skip-publish was set to true"
-  exit 0
-fi
+echo "PLATFORM: $PLATFORM"
+echo "TAG_NAME: $TAG_NAME"
+echo "FILE_PATH: $FILE_PATH"
 
 if [[ $FILE_PATH == "" ]]; then
   echo "No file path provided, exiting"
@@ -43,6 +34,15 @@ fi
 if [[ $BRANCH == "" ]]; then
   echo "BUILDKITE_BRANCH is not set, exiting"
   exit 1
+fi
+
+echo "BRANCH: $BRANCH"
+echo "SKIP_PUBLISH: $SKIP"
+echo "-----------------------------"
+
+if [[ "$SKIP" == "true" ]]; then
+  echo "--- Skipping publish as skip-publish was set to true"
+  exit 0
 fi
 
 TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
@@ -67,21 +67,21 @@ git config user.email "$email"
 # Fetch all tags before we check them
 git fetch --tags
 
-echo "--- Tagging with ${TAG}"
+echo "--- :label: Tagging with ${TAG}"
 git tag "${TAG}" -m "${message}"
 
 if ! git push origin "$TAG"; then
-  echo "--- Tag already exists"
+  echo "--- :warning: Tag already exists"
   buildkite-agent annotate "Failed to push tag \`$TAG\` as [it already exists](https://$repo_url/releases/tag/$TAG)." --style 'error' --context "$TAG_NAME-tag-push"
   exit 1
 else
-  echo "--- Tags pushed"
+  echo "--- :white_check_mark: Tag pushed successfully"
   buildkite-agent meta-data set 'publish-tag' $TAG
   buildkite-agent annotate "Successfully tagged \`$TAG\`" --style 'success' --context "$TAG_NAME-tag-push"
 fi
 
 if [[ "$PLATFORM" == "ios" ]]; then
-  echo "--- Publishing podspec"
+  echo "--- :rocket: Publishing podspec"
   bundle install --quiet
   bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
   bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
