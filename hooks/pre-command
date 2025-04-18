@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# shellcheck source=lib/functions.bash
-# shellcheck disable=SC1091
-source "$DIR/../lib/functions.bash"

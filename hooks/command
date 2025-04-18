@@ -4,6 +4,15 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+## If BUILDKITE_BUILD_ID is not set, we are running in a local environment
+## local environment is used for testing purposes. We need to source the functions.bash file in the test scripts
+## If we are running in a Buildkite environment, we need to source the functions.bash file  
+if [ --n "${BUILDKITE_BUILD_ID:-}" ]; then
+  # shellcheck source=lib/functions.bash
+  # shellcheck disable=SC1091
+  source "$DIR/../lib/functions.bash"  
+fi
+
 ## setup
 PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
@@ -13,20 +22,6 @@ echo "Plugin Inputs:"
 echo "PLATFORM: $PLATFORM"
 echo "TAG_NAME: $TAG_NAME"
 echo "FILE_PATH: $FILE_PATH"
-
-echo "-----------------------------"
-
-echo "Environment Variables:"
-echo "BUILDKITE_BRANCH: $BUILDKITE_BRANCH"
-echo "BUILDKITE_BUILD_CREATOR: $BUILDKITE_BUILD_CREATOR"
-echo "BUILDKITE_BUILD_CREATOR_EMAIL: $BUILDKITE_BUILD_CREATOR_EMAIL"
-echo "BUILDKITE_ORGANIZATION_SLUG: $BUILDKITE_ORGANIZATION_SLUG"
-echo "BUILDKITE_PIPELINE_SLUG: $BUILDKITE_PIPELINE_SLUG"
-echo "BUILDKITE_BUILD_NUMBER: $BUILDKITE_BUILD_NUMBER"
-echo "BUILDKITE_REPO: $BUILDKITE_REPO"
-echo "BUILDKITE_BUILD_URL: $BUILDKITE_BUILD_URL"
-echo "BUILDKITE_BUILD_ID: $BUILDKITE_BUILD_ID"
-
 echo "-----------------------------"
 
 BRANCH=${BUILDKITE_BRANCH:-""}
@@ -35,6 +30,7 @@ SKIP=$(buildkite-agent meta-data get 'skip-publish' --default 'true')
 echo "Computed Variables:"
 echo "BRANCH: $BRANCH"
 echo "SKIP_PUBLISH: $SKIP"
+echo "-----------------------------"
 
 if [[ "$SKIP" == "true" ]]; then
   echo "--- Skipping publish as skip-publish was set to true"
@@ -54,7 +50,6 @@ fi
 ## Tag and Publish to GitHub
 TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
 TAG="$TAG_NAME/$TAG_VERSION"
-echo "-----------------------------"
 echo "Tag and Publish to GitHub...."
 echo "TAG_VERSION: $TAG_VERSION"
 echo "TAG: $TAG"

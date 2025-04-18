@@ -18,8 +18,6 @@ setup() {
 }
 
 @test "GIVEN skip-publish is true THEN do not publish the tag" {
-    bats_require_minimum_version 1.5.0
-
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM="android"
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME="android-contract"
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH="android/contract/build.gradle"
@@ -32,7 +30,6 @@ setup() {
     export BUILDKITE_BUILD_NUMBER="123"
     export BUILDKITE_REPO="git@github.com:fanduel/um_repo_name.git"
     export BUILDKITE_BUILD_URL="https://buildkite.com/fanduel/um-android-contract/builds/123"
-    export BUILDKITE_BUILD_ID="1234567890"
 
     run bash -c "echo 'tagging with tag name'"
 
@@ -61,7 +58,6 @@ setup() {
     export BUILDKITE_BUILD_NUMBER="123"
     export BUILDKITE_REPO="git@github.com:fanduel/um_repo_name.git"
     export BUILDKITE_BUILD_URL="https://buildkite.com/fanduel/um-android-contract/builds/123"
-    export BUILDKITE_BUILD_ID="1234567890"
 
     stub get_platform_version_strings \
         "android android/contract/build.gradle : echo '1.0.0'"
