@@ -4,10 +4,6 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=lib/functions.bash
-# shellcheck disable=SC1091
-source "$DIR/../lib/functions.bash"
-
 ## setup
 PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
@@ -55,11 +51,11 @@ if [[ $BRANCH == "" ]]; then
   exit 1
 fi
 
-## Publish the tag
+## Tag and Publish to GitHub
 TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
 TAG="$TAG_NAME/$TAG_VERSION"
 echo "-----------------------------"
-echo "Publishing tag...."
+echo "Tag and Publish to GitHub...."
 echo "TAG_VERSION: $TAG_VERSION"
 echo "TAG: $TAG"
 
@@ -90,7 +86,7 @@ if ! git push origin "$TAG"; then
 else
   echo "--- Tags pushed"
   buildkite-agent meta-data set 'publish-tag' $TAG
-  buildkite-agent annotate "Successfully tagged \`$TAG\` - [geolocation-sdk/releases/tag/$TAG](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)" --style 'success' --context "$TAG_NAME-tag-push"
+  buildkite-agent annotate "Successfully tagged \`$TAG\`" --style 'success' --context "$TAG_NAME-tag-push"
 fi
 
 # if [[ "$PLATFORM" == "ios" ]]; then

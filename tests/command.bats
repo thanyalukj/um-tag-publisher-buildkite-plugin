@@ -46,7 +46,7 @@ setup() {
     unstub buildkite-agent
 }
 
-@test "GIVEN skip-publish is false THEN publish the tag (WIP)" {
+@test "GIVEN skip-publish is false THEN publish the tag" {
     bats_require_minimum_version 1.5.0
 
     export BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM="android"
@@ -63,6 +63,9 @@ setup() {
     export BUILDKITE_BUILD_URL="https://buildkite.com/fanduel/um-android-contract/builds/123"
     export BUILDKITE_BUILD_ID="1234567890"
 
+    stub get_platform_version_strings \
+        "android android/contract/build.gradle : echo '1.0.0'"
+
     stub git \
         "config \* \* : echo 'git config'" \
         "config \* \* : echo 'git config'" \
@@ -71,11 +74,16 @@ setup() {
         "push \* \* : echo 'git push'" \
 
     stub buildkite-agent \
-        "meta-data get 'skip-publish' --default 'true' : echo 'false'"
+        "meta-data get 'skip-publish' --default 'true' : echo 'meta-data get skip-publish: false'" \
+        "meta-data set 'publish-tag' \* : echo 'meta-data set publish-tag'" \
+        "annotate 'Successfully tagged \`android-contract/1.0.0\`' --style 'success' --context 'android-contract-tag-push' : echo 'tag success'"
 
     run "$PWD/hooks/command"
 
     assert_success
+    assert_output --partial "tag success"
 
+    unstub git
     unstub buildkite-agent
+    unstub get_platform_version_strings
 }
