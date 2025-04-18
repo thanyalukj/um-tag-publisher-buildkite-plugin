@@ -8,7 +8,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ## local environment is used for testing purposes. We need to source the functions.bash file in the test scripts
 ## If we are running in a Buildkite environment, we need to source the functions.bash file  
 BUILD_ID=${BUILDKITE_BUILD_ID:-""}
-if [ $BUILD_ID == "" ]; then
+if [ ! $BUILD_ID == "" ]; then
   # shellcheck source=lib/functions.bash
   # shellcheck disable=SC1091
   source "$DIR/../lib/functions.bash"  
@@ -19,16 +19,13 @@ PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
 FILE_PATH="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH"
 
-echo "Plugin Inputs:"
 echo "PLATFORM: $PLATFORM"
 echo "TAG_NAME: $TAG_NAME"
 echo "FILE_PATH: $FILE_PATH"
-echo "-----------------------------"
 
 BRANCH=${BUILDKITE_BRANCH:-""}
 SKIP=$(buildkite-agent meta-data get 'skip-publish' --default 'true')
 
-echo "Computed Variables:"
 echo "BRANCH: $BRANCH"
 echo "SKIP_PUBLISH: $SKIP"
 echo "-----------------------------"
