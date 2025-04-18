@@ -8,7 +8,7 @@ Publish a tag version for Unified Module.
 steps:
   - label: Publish Tag
     plugins:
-        - ssh://git@github.com/thanyalukj/um-tag-publisher-buildkite-plugin.git#v1.0.0:
+        - ssh://git@github.com/thanyalukj/um-tag-publisher-buildkite-plugin.git#v1.0.9:
             platform: 'android'
             tag_name: 'android-contract'
             file_path: 'android/contract/build.gradle'
