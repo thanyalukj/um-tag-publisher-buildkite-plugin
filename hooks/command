@@ -2,7 +2,11 @@
 
 set -euo pipefail
 
-load ../lib/platform.bash
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck source=lib/functions.bash
+# shellcheck disable=SC1091
+source "$DIR/../lib/functions.bash"
 
 # PLATFORM = ios
 # TAG_NAME = FILE_PATH
@@ -36,7 +40,10 @@ message="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG: Build $BUILDKITE
 username="$BUILDKITE_BUILD_CREATOR"
 email="$BUILDKITE_BUILD_CREATOR_EMAIL"
 
-echo "--- GITHUB repository - ${BUILDKITE_REPO}"
+# transform git@github.com:fanduel/{repo_name}.git to github.com/fanduel/{repo_name}
+repo_url=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@//' -e 's/\.git$//' -e 's/:/\//')
+echo "GITHUB repo git - ${BUILDKITE_REPO}"
+echo "GITHUB repo url - ${repo_url}"
 
 echo "--- Setting username - ${username}"
 git config user.name "$username"
@@ -45,7 +52,6 @@ git config user.email "$email"
 
 # Fetch all tags before we check them
 git fetch --tags
-
 
 # echo "--- Tagging with ${TAG}"
 # git tag "${TAG}" -m "${message}"
