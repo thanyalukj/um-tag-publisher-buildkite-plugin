@@ -76,7 +76,7 @@ git tag "${TAG}" -m "${message}"
 
 if ! git push origin "$TAG"; then
   echo "--- Tag already exists"
-  buildkite-agent annotate "Failed to push tag \`$TAG\` as [it already exists](https://github.com/fanduel/geolocation-sdk/releases/tag/$TAG)." --style 'error' --context "$TAG_NAME-tag-push"
+  buildkite-agent annotate "Failed to push tag \`$TAG\` as [it already exists](https://$repo_url/releases/tag/$TAG)." --style 'error' --context "$TAG_NAME-tag-push"
   exit 1
 else
   echo "--- Tags pushed"
