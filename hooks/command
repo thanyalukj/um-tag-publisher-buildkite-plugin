@@ -6,15 +6,15 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ## If BUILDKITE_BUILD_ID is not set, we are running in a local environment
 ## local environment is used for testing purposes. We need to source the functions.bash file in the test scripts
-## If we are running in a Buildkite environment, we need to source the functions.bash file  
+## If we are running in a Buildkite environment, we need to source the functions.bash file
 BUILD_ID=${BUILDKITE_BUILD_ID:-""}
 if [ ! $BUILD_ID == "" ]; then
   # shellcheck source=lib/functions.bash
   # shellcheck disable=SC1091
-  source "$DIR/../lib/functions.bash"  
+  source "$DIR/../lib/functions.bash"
 fi
 
-## setup
+## Setup variables needs to tag and publish
 PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
 FILE_PATH="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH"
@@ -45,21 +45,19 @@ if [[ $BRANCH == "" ]]; then
   exit 1
 fi
 
-## Tag and Publish to GitHub
 TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
 TAG="$TAG_NAME/$TAG_VERSION"
-echo "Tag and Publish to GitHub...."
+
 echo "TAG_VERSION: $TAG_VERSION"
 echo "TAG: $TAG"
 
+## Tag and Publish to GitHub
 message="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG: Build $BUILDKITE_BUILD_NUMBER for $BUILDKITE_BRANCH"
 username="$BUILDKITE_BUILD_CREATOR"
 email="$BUILDKITE_BUILD_CREATOR_EMAIL"
 
 # transform git@github.com:fanduel/{repo_name}.git to github.com/fanduel/{repo_name}
 repo_url=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@//' -e 's/\.git$//' -e 's/:/\//')
-echo "GITHUB repo: ${BUILDKITE_REPO}"
-echo "GITHUB repo URL: ${repo_url}"
 
 echo "--- Setting username - ${username}"
 git config user.name "$username"
@@ -82,9 +80,9 @@ else
   buildkite-agent annotate "Successfully tagged \`$TAG\`" --style 'success' --context "$TAG_NAME-tag-push"
 fi
 
-# if [[ "$PLATFORM" == "ios" ]]; then
-#   echo "--- Publishing podspec"
-#   bundle install --quiet
-#   bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
-#   bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
-# fi
+if [[ "$PLATFORM" == "ios" ]]; then
+  echo "--- Publishing podspec"
+  bundle install --quiet
+  bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
+  bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
+fi
