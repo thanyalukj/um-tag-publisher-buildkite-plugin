@@ -23,7 +23,7 @@ if [[ "$SKIP" == "true" ]]; then
   exit 0
 fi
 
-if [[ -z $1 ]]; then
+if [[ $FILE_PATH == "" ]]; then
   echo "No file path provided, exiting"
   exit 1
 fi
