@@ -9,9 +9,9 @@ setup() {
     # as those will point to the bats executable's location or the preprocessed file respectively
     DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")" >/dev/null 2>&1 && pwd)"
     # make executables in src/ visible to PATH
-    PATH="$DIR/../lib:$DIR/../hooks:$PATH"
-    
-    source $DIR/../lib/functions.bash
+    PATH="$DIR/../hooks:$PATH"
+
+    source "$DIR/../lib/functions.bash"
 
     # Uncomment to enable stub debugging
     # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
@@ -63,15 +63,19 @@ setup() {
     export BUILDKITE_BUILD_URL="https://buildkite.com/fanduel/um-android-contract/builds/123"
     export BUILDKITE_BUILD_ID="1234567890"
 
-    stub get_platform_version_strings \
-        "\* \* : echo '1.0.0'"
+    stub git \
+        "config \* \* : echo 'git config'" \
+        "config \* \* : echo 'git config'" \
+        "fetch --tags : echo 'git fetch'" \
+        "tag \* -m \* : echo 'git tag'" \
+        "push \* \* : echo 'git push'" \
 
     stub buildkite-agent \
         "meta-data get 'skip-publish' --default 'true' : echo 'false'"
 
     run "$PWD/hooks/command"
 
-    assert_failure
+    assert_success
 
     unstub buildkite-agent
 }

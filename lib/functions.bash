@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 function get_platform_version_strings() {
   local platform=$1
   local file_path=$2
