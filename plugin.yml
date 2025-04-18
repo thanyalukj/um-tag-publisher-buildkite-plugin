@@ -1,0 +1,15 @@
+name: um-tag-publisher
+version: 1.0.1
+title: Um Tag Publisher
+description: Tag and publish the version of a UM
+author: https://github.com/thanyalukj
+requirements: []
+configuration:
+  properties:
+    platform:
+      type: string
+    tag_name:
+      type: string
+    file_path:
+      type: string
+  additionalProperties: false
