@@ -4,9 +4,9 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-## If BUILDKITE_BUILD_ID is not set, we are running in a local environment
-## local environment is used for testing purposes. We need to source the functions.bash file in the test scripts
-## If we are running in a Buildkite environment, we need to source the functions.bash file
+## Source functions.bash based on environment
+## local environment = BUILDKITE_BUILD_ID is not set
+## Buildkite environment = BUILDKITE_BUILD_ID is set
 BUILD_ID=${BUILDKITE_BUILD_ID:-""}
 if [ ! $BUILD_ID == "" ]; then
   # shellcheck source=lib/functions.bash
@@ -18,7 +18,7 @@ fi
 PLATFORM="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_PLATFORM"
 TAG_NAME="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_TAG_NAME"
 FILE_PATH="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_FILE_PATH"
-
+CREATE_RELEASE="$BUILDKITE_PLUGIN_UM_TAG_PUBLISHER_CREATE_RELEASE"
 BRANCH=${BUILDKITE_BRANCH:-""}
 SKIP=$(buildkite-agent meta-data get 'skip-publish' --default 'true')
 
@@ -44,6 +44,12 @@ if [[ "$SKIP" == "true" ]]; then
   echo "--- Skipping publish as skip-publish was set to true"
   exit 0
 fi
+
+##############################################################################
+## Publish the tag to GitHub
+## This will create a tag with the name of the platform and the version and
+## publish it to GitHub
+##############################################################################
 
 TAG_VERSION=$(get_platform_version_strings "$PLATFORM" "$FILE_PATH")
 TAG="$TAG_NAME/$TAG_VERSION"
@@ -80,9 +86,30 @@ else
   buildkite-agent annotate "Successfully tagged \`$TAG\`" --style 'success' --context "$TAG_NAME-tag-push"
 fi
 
-if [[ "$PLATFORM" == "ios" ]]; then
-  echo "--- :rocket: Publishing podspec"
-  bundle install --quiet
-  bundle exec pod repo add private-podspecs git@github.com:fanduel/private-podspecs.git
-  bundle exec pod repo push private-podspecs "$FILE_PATH" --sources='git@github.com:fanduel/private-podspecs.git,https://cdn.cocoapods.org/' --allow-warnings
+##############################################################################
+## Create a release on GitHub if the CREATE_RELEASE variable is set to true
+## This will create a release with the tag name and the commit message
+##############################################################################
+
+if [[ "$TAG" == "" || "$TAG" == *"alpha"* ]]; then
+  echo "--- :double_vertical_bar: Skip a release for alpha version: $TAG"
+  exit 0
 fi
+
+if [[ ! "${CREATE_RELEASE:-on}" =~ ^(true|on|1)$ ]]; then
+  echo "--- :double_vertical_bar: Skipping release creation as create_release was set to false"
+  exit 0
+fi
+
+# Create a GitHub Release
+echo "--- :white_check_mark: Creating a release for version: $TAG"  
+new_release=$(curl -L \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/fanduel/${repo_name}/releases \
+  -d '{"TAG": "'"${TAG}"'","target_commitish":"main","name":"'"${TAG}"'","draft":false,"prerelease":false,"generate_release_notes":true}')
+
+echo $new_release

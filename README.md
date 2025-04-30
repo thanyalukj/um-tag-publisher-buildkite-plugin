@@ -6,12 +6,13 @@ Publish a tag version for Unified Module.
 
 ```yml
 steps:
-  - label: Publish Tag
+  - label: Publish Tag and Create a Release
     plugins:
-        - ssh://git@github.com/thanyalukj/um-tag-publisher-buildkite-plugin.git#v1.0.9:
+        - ssh://git@github.com/thanyalukj/um-tag-publisher-buildkite-plugin.git#v1.0.0:
             platform: 'android'
             tag_name: 'android-contract'
             file_path: 'android/contract/build.gradle'
+            create_release: true
     agents:
       queue: build
 ```
@@ -29,6 +30,10 @@ Specifies the tag name. Accepted values are: `android-contract`, `android-librar
 ### `file_path` (Required, string)
 
 Specifies the file_path where the plugin is looking for the version.
+
+### `create_release` (Optional, boolean)
+
+Specifies that you want to create a github release on the non-alpha version after the tag is published. Default value is `true`.
 
 ## Development
 
