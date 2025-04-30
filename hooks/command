@@ -101,7 +101,7 @@ if [[ ! "${CREATE_RELEASE:-on}" =~ ^(true|on|1)$ ]]; then
 fi
 
 # Create a GitHub Release
-echo "--- :white_check_mark: Creating a release for version: $TAG"  
+echo "--- :clipboard: Create a release for version: $TAG"  
 
 # transform git@github.com:fanduel/{repo_name}.git to {repo_name}
 repo_name=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@github.com:fanduel\///' -e 's/\.git$//')
@@ -115,3 +115,9 @@ new_release=$(curl -L \
   -d '{"tag_name": "'"${TAG}"'","target_commitish":"main","name":"'"${TAG}"'","draft":false,"prerelease":false,"generate_release_notes":true}')
 
 echo $new_release
+
+published_release=$(echo $new_release | jq -R '.' | jq -s '.' | jq -r 'join("")' | jq -r '.tag_name')
+if [[ $published_release == $TAG ]]; then
+  echo "--- :white_check_mark: Release created successfully"
+  buildkite-agent annotate "Successfully created release \`$TAG\`" --style 'success' --context "$TAG_NAME-release-create"
+fi
