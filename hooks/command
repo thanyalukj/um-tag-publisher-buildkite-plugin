@@ -82,7 +82,6 @@ if ! git push origin "$TAG"; then
   exit 1
 else
   echo "--- :white_check_mark: Tag pushed successfully"
-  buildkite-agent meta-data set 'publish-tag' $TAG
   buildkite-agent annotate "Successfully tagged \`$TAG\`" --style 'success' --context "$TAG_NAME-tag-push"
 fi
 
