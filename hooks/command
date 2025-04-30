@@ -102,6 +102,9 @@ fi
 
 # Create a GitHub Release
 echo "--- :white_check_mark: Creating a release for version: $TAG"  
+
+# transform git@github.com:fanduel/{repo_name}.git to {repo_name}
+repo_name=$(echo "${BUILDKITE_REPO}" | sed -e 's/^git@github.com:fanduel\///' -e 's/\.git$//')
 new_release=$(curl -L \
   -X POST \
   -H "Content-Type: application/json" \
